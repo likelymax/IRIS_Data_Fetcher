@@ -6,6 +6,8 @@
 clear all
 %%
 
+% this code is used to download data from IRIS
+
 
 addpath('/Users/likelymax/Documents/Research/SAC_DATA')
 
