@@ -1,0 +1,142 @@
+#!/bin/bash
+
+path=`pwd`
+rfpath='/Users/likelymax/Dropbox/Whole_world_density/whole_radial/'
+
+cat density_moho_new_file_T_0.15.dat | while read line
+do
+    cd $path
+    name=${line%% *}
+    echo $name > tmp
+    bhetmp=`sed 's/BH/BHE/g' tmp`
+    bhe=${bhetmp%.*}.SAC
+    bhntmp=`sed 's/BH/BHN/g' tmp`
+    bhn=${bhntmp%.*}.SAC
+    bhztmp=`sed 's/BH/BHZ/g' tmp`
+    bhz=${bhztmp%.*}.SAC
+    cd $rfpath
+    if [ -f $name ]
+    then
+        cp $name $path
+    fi
+    cd $path
+    python3 read_sac.py -R$name
+    net=`awk '{print $1}' out.dat`
+    stn=`awk '{print $2}' out.dat`
+    stlo=`awk '{print $3}' out.dat`
+    stla=`awk '{print $4}' out.dat`
+    startime=`awk '{print $5}' out.dat`
+    endtime=`awk '{print $6}' out.dat`
+    echo $net $stn $startime $endtime
+    ./FetchData --lon -180:180 --lat -90:90 -N $net -S $stn -F -C '*HE' -s $startime -e $endtime -F -v -o 'IRISDMC-out_'$net'_'$stn'_'$startime'_'$endtime'_E.mseed' 
+    ./FetchData --lon -180:180 --lat -90:90 -N $net -S $stn -F -C '*HN' -s $startime -e $endtime -F -v -o 'IRISDMC-out_'$net'_'$stn'_'$startime'_'$endtime'_N.mseed'
+    ./FetchData --lon -180:180 --lat -90:90 -N $net -S $stn -F -C '*HZ' -s $startime -e $endtime -F -v -o 'IRISDMC-out_'$net'_'$stn'_'$startime'_'$endtime'_Z.mseed'  
+    ./FetchData --lon -180:180 --lat -90:90 -N $net -S $stn -F -C '*H1' -s $startime -e $endtime -F -v -o 'IRISDMC-out_'$net'_'$stn'_'$startime'_'$endtime'_1.mseed'
+    ./FetchData --lon -180:180 --lat -90:90 -N $net -S $stn -F -C '*H2' -s $startime -e $endtime -F -v -o 'IRISDMC-out_'$net'_'$stn'_'$startime'_'$endtime'_2.mseed' 
+
+
+    newpath=`pwd`'/mseed_data/'
+    if [ -f *$net'_'$stn'_'$startime'_'$endtime'_E.mseed' ]
+    then
+        ./mseed2sac *$net'_'$stn'_'$startime'_'$endtime'_E.mseed'
+        mv *$net'_'$stn'_'$startime'_'$endtime'_E.mseed' $newpath
+    fi
+    if [ -f *$net'_'$stn'_'$startime'_'$endtime'_N.mseed' ]
+    then
+        ./mseed2sac *$net'_'$stn'_'$startime'_'$endtime'_N.mseed'
+        mv *$net'_'$stn'_'$startime'_'$endtime'_N.mseed' $newpath
+    fi
+    if [ -f *$net'_'$stn'_'$startime'_'$endtime'_Z.mseed' ]
+    then
+        ./mseed2sac *$net'_'$stn'_'$startime'_'$endtime'_Z.mseed'
+        mv *$net'_'$stn'_'$startime'_'$endtime'_Z.mseed' $newpath
+    fi
+    if [ -f *$net'_'$stn'_'$startime'_'$endtime'_1.mseed' ]
+    then
+        ./mseed2sac *$net'_'$stn'_'$startime'_'$endtime'_1.mseed'
+        mv *$net'_'$stn'_'$startime'_'$endtime'_1.mseed' $newpath
+    fi
+    
+    if [ -f *$net'_'$stn'_'$startime'_'$endtime'_2.mseed' ]
+    then
+        ./mseed2sac *$net'_'$stn'_'$startime'_'$endtime'_2.mseed'
+        mv *$net'_'$stn'_'$startime'_'$endtime'_2.mseed' $newpath
+    fi    
+        stel=`saclst stel f $name | awk '{print $2}'`
+        evla=`saclst evla f $name | awk '{print $2}'`
+        evlo=`saclst evlo f $name | awk '{print $2}'`
+        evdp=`saclst evdp f $name | awk '{print $2}'`
+        emag=`saclst mag f $name | awk '{print $2}'`
+        for sa in $net.$stn*.SAC
+        do
+            sac << EOF
+            r $sa
+            ch CMPINC 90.0
+            wh
+            ch stla $stla
+            wh
+            ch stlo $stlo
+            wh
+            ch stel $stel
+            wh
+            ch evla $evla
+            wh
+            ch evlo $evla
+            wh
+            ch evdp $edp
+            wh
+            ch mag $emag
+            wh
+            quit
+EOF
+        done
+    count=1
+
+    dpath='/Users/likelymax/Dropbox/RFs_noise_analysis/data_2/'
+    for tmpfile in *HE*.SAC
+    do
+
+        mv $tmpfile ${bhetmp%.*}-$count.SAC
+        mv ${bhetmp%.*}-$count.SAC $dpath
+        count=`echo "$count + 1" | bc`
+    done
+
+    for tmpfile in *H1*.SAC
+    do
+        mv $tmpfile ${bhetmp%.*}-$count.SAC
+        mv ${bhetmp%.*}-$count.SAC $dpath
+
+        count=`echo "$count + 1" | bc`
+    done
+    count=1
+
+    for tmpfile in *HN*.SAC
+    do
+
+        mv $tmpfile ${bhntmp%.*}-$count.SAC
+        mv ${bhntmp%.*}-$count.SAC $dpath
+
+        count=`echo "$count + 1" | bc`
+    done
+
+    for tmpfile in *H2*.SAC
+    do
+
+        mv $tmpfile ${bhntmp%.*}-$count.SAC
+        mv ${bhntmp%.*}-$count.SAC $dpath
+
+        count=`echo "$count + 1" | bc`
+    done
+    
+    count=1
+    for tmpfile in *HZ*.SAC
+    do
+
+        mv $tmpfile ${bhztmp%.*}-$count.SAC
+        mv ${bhztmp%.*}-$count.SAC $dpath
+
+        count=`echo "$count + 1" | bc`
+    done
+    echo "=============done=============="
+    rm $name
+done 
