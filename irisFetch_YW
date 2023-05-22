@@ -34,7 +34,6 @@ do
     ./FetchData --lon -180:180 --lat -90:90 -N $net -S $stn -F -C '*H1' -s $startime -e $endtime -F -v -o 'IRISDMC-out_'$net'_'$stn'_'$startime'_'$endtime'_1.mseed'
     ./FetchData --lon -180:180 --lat -90:90 -N $net -S $stn -F -C '*H2' -s $startime -e $endtime -F -v -o 'IRISDMC-out_'$net'_'$stn'_'$startime'_'$endtime'_2.mseed' 
 
-
     newpath=`pwd`'/mseed_data/'
     if [ -f *$net'_'$stn'_'$startime'_'$endtime'_E.mseed' ]
     then
@@ -62,34 +61,32 @@ do
         ./mseed2sac *$net'_'$stn'_'$startime'_'$endtime'_2.mseed'
         mv *$net'_'$stn'_'$startime'_'$endtime'_2.mseed' $newpath
     fi    
-        stel=`saclst stel f $name | awk '{print $2}'`
-        evla=`saclst evla f $name | awk '{print $2}'`
-        evlo=`saclst evlo f $name | awk '{print $2}'`
-        evdp=`saclst evdp f $name | awk '{print $2}'`
-        emag=`saclst mag f $name | awk '{print $2}'`
-        for sa in $net.$stn*.SAC
-        do
-            sac << EOF
-            r $sa
-            ch CMPINC 90.0
-            wh
-            ch stla $stla
-            wh
-            ch stlo $stlo
-            wh
-            ch stel $stel
-            wh
-            ch evla $evla
-            wh
-            ch evlo $evla
-            wh
-            ch evdp $edp
-            wh
-            ch mag $emag
-            wh
-            quit
+    stel=`saclst stel f $name | awk '{print $2}'`
+    evla=`saclst evla f $name | awk '{print $2}'`
+    evlo=`saclst evlo f $name | awk '{print $2}'`
+    evdp=`saclst evdp f $name | awk '{print $2}'`
+    emag=`saclst mag f $name | awk '{print $2}'`
+    for sa in $net.$stn*.SAC
+    do
+        sac << EOF
+        r $sa
+        ch stla $stla
+        wh
+        ch stlo $stlo
+        wh
+        ch stel $stel
+        wh
+        ch evla $evla
+        wh
+        ch evlo $evla
+        wh
+        ch evdp $edp
+        wh
+        ch mag $emag
+        wh
+        quit
 EOF
-        done
+    done
     count=1
 
     dpath='/Users/likelymax/Dropbox/RFs_noise_analysis/data_2/'
