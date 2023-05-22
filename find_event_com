@@ -1,0 +1,170 @@
+#!/bin/bash
+
+make find_event
+
+cat name.txt | while read file
+do
+	echo $file
+	samp='.M.'
+	if [[ $file == *$samp* ]]
+	then
+		var=${file%.M.*}
+
+		cap=${var:0-1:1}
+		if [ $cap == "E" ]
+		then
+			var=${file%%E.M.*}
+			last=${file#*E.M.}
+			bhn=$var'N.M.'$last
+			bhz=$var'Z.M.'$last
+		elif [ $cap == "1" ]
+		then
+			var=${file%%1.M.*}
+			last=${file#*1.M.}
+			bhn=$var'2.M.'$last
+			bhz=$var'Z.M.'$last
+		fi
+	else
+		var=${file%.D.*}
+		cap=${var:0-1:1}
+		if [ $cap == "E" ]
+		then
+			var=${file%%E.D.*}
+			last=${file#*E.D.}
+			bhn=$var'N.D.'$last
+			bhz=$var'Z.D.'$last
+		elif [ $cap == "1" ]
+		then
+			var=${file%%1.D.*}
+			last=${file#*1.D.}
+			bhn=$var'2.D.'$last
+			bhz=$var'Z.D.'$last
+		fi
+	fi
+	if [ -f $bhn ]&&[ -f $bhz ]
+	then
+	kztime=`saclst kztime f $file | awk '{print $2}'`
+	kzdate=`saclst kzdate f $file | awk '{print $2}'`
+	npts=`saclst npts f $file | awk '{print $2}'`
+	delta=`saclst delta f $file | awk '{print $2}'`
+	period=`echo "$npts * $delta/2" | bc`
+
+	year=${kzdate%%/*}
+	var=${kzdate#*/}
+	mon=${var%%/*}
+	day=${var#*/}
+	hour=${kztime%%:*}
+	echo "hour is " $hour
+	if [ $hour == '24' ]
+	then
+		day=`echo "$day + 1" | bc`
+		hour=0
+	elif [ $hour -gt "0" ]
+	then
+		hour=`echo "$hour - 1" | bc`
+	elif [ $hour == "0" ]
+	then
+		hour=23
+		if [ $day -gt 1 ]
+		then
+			day=`echo "$day - 1" | bc`
+		elif [ $day == 1 ]
+		then
+			if [ $mon == 4 ]||[ $mon == 6 ]||[ $mon == 2 ]||[ $mon == 7 ]||[ $mon == 9 ]||[ $mon == 11 ]
+			then
+				day=31
+				mon=`echo "$mon - 1" | bc`
+			elif [ $mon == 5 ]||[ $mon == 8 ]||[ $mon == 10 ]||[ $mon == 12 ]
+			then
+				day=30
+				mon=`echo "$mon - 1" | bc`
+			elif [ $mon == 3 ]
+			then
+				yu=`echo "$year%4" | bc`
+				if [ $yu -eq 0 ]
+				then
+					day=29
+					mon=2
+				else
+					day=28
+					mon=2
+				fi
+			elif [ $mon == 1 ]
+			then
+				day=31
+				mon=12
+				year=`echo "$year - 1" | bc`
+			fi
+		fi
+	fi
+
+	var=${kztime#*:}
+	echo "the rest is " $var
+	final=$hour:$var
+	startime=$year-$mon-$day,$final
+	time=$kzdate'T'$kztime
+	./find_event -Eevent.dat -T$time -D$period/$delta -Otime.dat
+	eyear=`awk '{print $1}' time.dat`
+	emon=`awk '{print $2}' time.dat`
+	eday=`awk '{print $3}' time.dat`
+	ehour=`awk '{print $4}' time.dat`
+	emin=`awk '{print $5}' time.dat`
+	esec=`awk '{print $6}' time.dat`
+	echo "ehour is " $ehour
+	cc=`echo "$ehour == 24" | bc`
+	if [ $cc -eq 1 ]
+	then
+		eday=`echo "$eday + 1" | bc`
+		ehour=0
+	fi
+	if [ $emon -lt 10 ]
+	then
+		emon='0'$emon
+	elif [ $eday -lt 10 ]
+	then
+		eday='0'$eday
+	elif [ $ehour -lt 10 ]
+	then
+		ehour='0'$ehour
+	elif [ $emin -lt 10 ]
+	then
+		emin='0'$emin
+	elif [ $esec -lt 10 ]
+	then
+		esec='0'$esec
+	fi
+	endtime=$eyear-$emon-$day,$ehour:$emin:$esec
+	echo $endtime
+	./FetchEvent -s $startime -e $endtime --magtype mw --mag 1:10 -o event.test
+	rm event event2 event3
+	sed 's/|/ /g' event.test >> event
+	awk '{print $6, $5, $7, $2}' event >> event2
+	sed 's/,/ /g' event2 >> event3
+	maxmag=`awk 'BEGIN {max = 0} {if ($5+0 > max+0) max=$5} END {print max}' event3`
+	evlo=`awk '{if ($5 == '$maxmag') {print $1}}' event3`
+	evla=`awk '{if ($5 == '$maxmag') {print $2}}' event3`
+	evdp=`awk '{if ($5 == '$maxmag') {print $3}}' event3`
+sac << EOF
+
+echo on
+r $file $bhn $bhz
+ch evlo $evlo
+wh
+ch evla $evla
+wh
+ch evdp $evdp
+wh
+ch mag $maxmag
+wh
+quit
+EOF
+	var=${file%-*}.SAC
+	mv $file $var
+	var=${bhn%-*}.SAC
+	mv $bhn $var
+	var=${bhz%-*}.SAC
+	mv $bhz $var
+	echo "=========done========"
+	fi
+done
+
