@@ -3,7 +3,7 @@
 path=`pwd`
 rfpath='/Users/likelymax/Dropbox/Whole_world_density/whole_radial/'
 
-cat density_moho_new_file_T_0.15.dat | while read line
+cat name.txt | while read line
 do
     cd $path
     name=${line%% *}
