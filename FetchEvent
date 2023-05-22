@@ -446,13 +446,6 @@ if ( ! defined $altform ) {
       print EVENT " -- NO ORIGINS\n";
       next;
     }
-
-    # Print first/primary origin
-    my ($time,$lat,$lon,$depth,$author,$catalog,$contributor,$contributoreventid) = @{$origins{$eventid}{$originids[0]}};
-    printf (EVENT "|%-24s|%-8s|%-9s|%-6s|%s|%s|%s%s",
-	    $time,&decimalposition($lat,4),&decimalposition($lon,5),&decimalposition($depth,5),
-	    $author,$catalog,$contributor,($contributoreventid)?",$contributoreventid":"");
-
     # Generate list of magnitude IDs with primary magnitude first and others sorted on ascending value
     my @magids = (exists $mags{$eventid}{$eventprimemag{$eventid}}) ? ($eventprimemag{$eventid}) : ();
     foreach my $magid ( sort { ${$mags{$eventid}{$b}}[1] cmp ${$mags{$eventid}{$a}}[1] } keys %{$mags{$eventid}} ) {
@@ -462,10 +455,43 @@ if ( ! defined $altform ) {
 
     # Print magnitudes
     foreach my $magid ( @magids ) {
+      # my $magstr = join (',', @{$mags{$eventid}{$magid}});
       my $magstr = join (',', @{$mags{$eventid}{$magid}});
+      # printf STDERR "----------------\n";
+      # printf STDERR "before mag %s\n", $magstr;
       $magstr =~ s/,*$//;  # Cut trailing commas
+      # $magstr = ~s/,/a,/;
+      $magstr = 'a' . $magstr;
+      # printf STDERR "after mag %s\n", $magstr;
       print EVENT "|$magstr";
     }
+
+
+    # Print first/primary origin
+    my ($time,$lat,$lon,$depth,$author,$catalog,$contributor,$contributoreventid) = @{$origins{$eventid}{$originids[0]}};
+    printf (EVENT "|%-24s|%-8s|%-9s|%-6s|%s|%s|%s%s",
+	    $time,&decimalposition($lat,4),&decimalposition($lon,5),&decimalposition($depth,5),
+	    $author,$catalog,$contributor,($contributoreventid)?",$contributoreventid":"");
+
+    # # Generate list of magnitude IDs with primary magnitude first and others sorted on ascending value
+    # my @magids = (exists $mags{$eventid}{$eventprimemag{$eventid}}) ? ($eventprimemag{$eventid}) : ();
+    # foreach my $magid ( sort { ${$mags{$eventid}{$b}}[1] cmp ${$mags{$eventid}{$a}}[1] } keys %{$mags{$eventid}} ) {
+    #   push (@magids, $magid) if ( $magid ne $eventprimemag{$eventid} );
+    # }
+    # $totalmags += scalar @magids;
+
+    # # Print magnitudes
+    # foreach my $magid ( @magids ) {
+    #   # my $magstr = join (',', @{$mags{$eventid}{$magid}});
+    #   my $magstr = join (',', @{$mags{$eventid}{$magid}});
+    #   # printf STDERR "----------------\n";
+    #   # printf STDERR "before mag %s\n", $magstr;
+    #   $magstr =~ s/,*$//;  # Cut trailing commas
+    #   # $magstr = ~s/,/a,/;
+    #   $magstr = 'a' . $magstr;
+    #   # printf STDERR "after mag %s\n", $magstr;
+    #   print EVENT "|$magstr";
+    # }
 
     # Print event name and newline
     printf EVENT "|$eventname{$eventid}\n";
